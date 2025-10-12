@@ -3,3 +3,4 @@ Pillow
 tqdm
 scikit-learn
 matplotlib
+tensorflow

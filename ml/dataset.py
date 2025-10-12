@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     # Save the processed dataset to .npy files for later use
     np.save(os.path.join(output_dir, "X_data.npy"), X)
-    np.save(os.path.join(output_dir, "Y_data.npy"), y)
+    np.save(os.path.join(output_dir, "y_data.npy"), y)
     print(
         "\nProcessed data and labels have been saved to the 'processed_data' directory."
     )
