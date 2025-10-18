@@ -67,6 +67,7 @@ def create_dataset(dataset_path):
                 # float32 for memory-efficient
 
                 # STEP 5: Flatten the 28x28 array into a 1D vector of 784 features
+                # SUPER USELESS STEP since we will use CNN, but I didn't remove it XD
                 flattened_array = normalized_array.flatten()
                 # print(flattened_array)
                 # break

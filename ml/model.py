@@ -48,6 +48,7 @@ class CNN_DigitClassifier:
         # Ensure shape, dtype, scaling
         if X.ndim == 2 and X.shape[1] == 784:
             # dtype and scaling already handled in dataset.py
+            # the -1 is for numpy to infer the number of samples
             X = X.reshape(-1, 28, 28, 1)
         elif X.ndim == 3 and X.shape[1:] == (28, 28):
             X = X[..., None]
