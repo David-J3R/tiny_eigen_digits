@@ -1,6 +1,8 @@
 fastapi
 uvicorn[standard]
-tensorflow
+# tensorflow
+# for container using a much smaller version of tensorflow
+tensorflow-cpu
 numpy
 Pillow
 pydantic-settings

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from .config import config
 from .routers.cnn_predict import router as predict_router
@@ -15,15 +16,15 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
 # Consistent Health Check Endpoint
-@app.get("/", tags=["Health Check"])
+@app.get("/", include_in_schema=False)
 def root():
-    return {"status": "ok", "message": f"{config.APP_NAME} is running."}
+    return FileResponse("frontend/index.html")
 
 
 # Include Routers

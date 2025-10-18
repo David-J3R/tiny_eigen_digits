@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Handwritten Digit Recognizer</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f2f5;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        border-radius: 12px;
+        background-color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: 320px; /* Added a fixed width for consistency */
+      }
+      h1 {
+        color: #1c1e21;
+        margin-top: 0;
+      }
+      #drawing-canvas {
+        border: 3px solid #ccc;
+        border-radius: 8px;
+        cursor: crosshair;
+        touch-action: none; /* Prevents scrolling on touch devices */
+        background-color: white; /* Explicitly set background */
+      }
+      .controls {
+        margin-top: 1.5rem;
+        display: flex; /* Use flexbox for button alignment */
+        justify-content: space-around;
+      }
+      button {
+        font-size: 1.1em;
+        padding: 0.8em 1.2em;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 45%; /* Give buttons relative width */
+      }
+      button:disabled {
+        background-color: #dcdfe3;
+        cursor: not-allowed;
+      }
+      #predict-btn {
+        background-color: #1877f2;
+        color: white;
+      }
+      #predict-btn:hover:not(:disabled) {
+        background-color: #166fe5;
+      }
+      #clear-btn {
+        background-color: #e4e6eb;
+        color: #4b4f56;
+      }
+      #clear-btn:hover:not(:disabled) {
+        background-color: #dcdfe3;
+      }
+      .prediction-container {
+        margin-top: 1.5rem;
+        font-size: 1.2em; /* Adjusted size for better fit */
+        height: 50px; /* Fixed height to prevent layout shift */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+      #prediction-result {
+        font-weight: bold;
+        color: #1877f2;
+        font-size: 1.5em;
+      }
+      #confidence-text {
+        font-size: 0.8em;
+        color: #606770;
+      }
+      .error-text {
+        color: #fa383e;
+        font-size: 0.9em;
+        font-weight: normal;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Draw a Digit (0-9)</h1>
+      <canvas id="drawing-canvas" width="280" height="280"></canvas>
+      <div class="controls">
+        <button id="predict-btn">Predict</button>
+        <button id="clear-btn">Clear</button>
+      </div>
+      <div class="prediction-container">
+        <span id="prediction-result">-</span>
+        <span id="confidence-text"></span>
+      </div>
+    </div>
+
+    <script>
+      // Wait for the DOM to be fully loaded before running any script
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- Constants and State ---
+        const API_URL = "http://127.0.0.1:8000/api/v1/predict";
+
+        const canvas = document.getElementById("drawing-canvas");
+        const predictBtn = document.getElementById("predict-btn");
+        const clearBtn = document.getElementById("clear-btn");
+        const resultSpan = document.getElementById("prediction-result");
+        const confidenceSpan = document.getElementById("confidence-text");
+
+        const ctx = canvas.getContext("2d");
+        let isDrawing = false;
+
+        // Set drawing style
+        ctx.lineWidth = 20;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = "white"; // Set fill style for clearing
+        ctx.fillRect(0, 0, canvas.width, canvas.height); // Start with a white background
+
+        // --- Drawing Functions ---
+        function getPosition(e) {
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+
+          // Handle both mouse and touch events
+          const clientX = e.clientX || e.touches[0].clientX;
+          const clientY = e.clientY || e.touches[0].clientY;
+
+          return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY,
+          };
+        }
+
+        function startDrawing(e) {
+          e.preventDefault();
+          isDrawing = true;
+          const { x, y } = getPosition(e);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+        }
+
+        function draw(e) {
+          if (!isDrawing) return;
+          e.preventDefault();
+          const { x, y } = getPosition(e);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+
+        function stopDrawing() {
+          if (!isDrawing) return;
+          isDrawing = false;
+        }
+
+        // --- Event Listeners for Drawing ---
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mouseout", stopDrawing);
+
+        canvas.addEventListener("touchstart", startDrawing);
+        canvas.addEventListener("touchmove", draw);
+        canvas.addEventListener("touchend", stopDrawing);
+
+        // --- Button Functions ---
+
+        function clearCanvas() {
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          resultSpan.innerText = "-";
+          resultSpan.classList.remove("error-text");
+          confidenceSpan.innerText = "";
+        }
+
+        async function handlePredict() {
+          // 1. Set loading state
+          predictBtn.disabled = true;
+          clearBtn.disabled = true;
+          resultSpan.innerText = "...";
+          resultSpan.classList.remove("error-text");
+          confidenceSpan.innerText = "Processing";
+
+          // 2. Get the base64 data URL. The canvas already has a white
+          //    background, so we can just export it. This creates a
+          //    PNG with black ink on a white background, which is
+          //    exactly what our backend's preprocessor expects.
+          const base64Image = canvas.toDataURL("image/png");
+
+          try {
+            // 3. Send data to the backend
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image_base64: base64Image }),
+            });
+
+            // 4. Handle API errors (like 400, 422, 500)
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.detail || "Prediction request failed.");
+            }
+
+            // 5. Handle successful prediction
+            const result = await response.json();
+            resultSpan.innerText = result.predicted_digit;
+            confidenceSpan.innerText = `Confidence: ${(
+              result.confidence * 100
+            ).toFixed(1)}%`;
+          } catch (error) {
+            // 6. Handle fetch errors (e.g., network down) or API errors
+            console.error("Prediction Error:", error);
+            resultSpan.innerText = "Error";
+            resultSpan.classList.add("error-text");
+            confidenceSpan.innerText = error.message;
+          } finally {
+            // 7. Reset UI state
+            predictBtn.disabled = false;
+            clearBtn.disabled = false;
+          }
+        }
+
+        // --- Event Listeners for Buttons ---
+        clearBtn.addEventListener("click", clearCanvas);
+        predictBtn.addEventListener("click", handlePredict);
+      });
+    </script>
+  </body>
+</html>

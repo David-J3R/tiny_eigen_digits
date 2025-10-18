@@ -23,7 +23,12 @@ class GlobalConfig(BaseConfig):
     )
 
     # CORS settings
-    CORS_ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5500",
+        "http://localhost:8000",
+        "http://127.0.0.1:5500",  # LiveServer alternative
+    ]
 
     # API settings
     API_V1_PREFIX: str = "/api/v1"
