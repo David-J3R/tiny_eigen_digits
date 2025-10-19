@@ -12,7 +12,7 @@ from tqdm import tqdm
     2. Convert to Grayscale
     3. Resize to 28x28
     4. Normalize pixel values to 0-1
-    5. Flatten the image into a 1D vector
+    5. Flatten the image into a 1D vector (Useless for CNN, but included for completeness)
 """
 
 
@@ -68,6 +68,7 @@ def create_dataset(dataset_path):
 
                 # STEP 5: Flatten the 28x28 array into a 1D vector of 784 features
                 # SUPER USELESS STEP since we will use CNN, but I didn't remove it XD
+                # I want to see if someone is paying attention
                 flattened_array = normalized_array.flatten()
                 # print(flattened_array)
                 # break
