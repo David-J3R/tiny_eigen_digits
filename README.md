@@ -10,6 +10,8 @@ I found a European (Swiss) Handwritten Digits dataset on Kaggle containing over 
 
 The challenge wasn't just building a model that could hit 90% accuracy. It was engineering a robust preprocessing pipeline to turn those 21,000+ images into an MNIST-lookalike dataset, then deploying it properly with FastAPI, Docker, and a clean web interface.
 
+Kaggle dataset -> https://www.kaggle.com/datasets/olafkrastovski/handwritten-digits-0-9/data
+
 ## What I Built
 
 - **Trained and evaluated a CNN in TensorFlow** to achieve 98.63% accuracy on the dataset
@@ -203,10 +205,6 @@ Set `ENV_STATE` in `.env` to switch between modes.
 - **Test Accuracy:** 98.63%
 - **Inference Time:** <100ms per image
 - **Docker Image:** ~2.17GB (with tensorflow-cpu)
-
-## Results & Reflections
-
-GOAL:
 
 ## Development Tools
 
